@@ -72,8 +72,8 @@ func main() {
 	// Endpoint untuk mendapatkan daftar ruangan aktif
 	http.HandleFunc("/api/list-rooms", handleListRooms)
 
-	log.Println("Server dimulai di port 80")
-	log.Fatal(http.ListenAndServe(":80", nil))
+	log.Println("Server dimulai di port 443")
+	log.Fatal(http.ListenAndServe(":443", nil))
 }
 
 func handleICEServers(w http.ResponseWriter, r *http.Request) {
