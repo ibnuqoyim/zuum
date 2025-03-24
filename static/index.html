@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Conference</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        
+        body {
+            background-color: #1a1a1a;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        /* Login/Setup Screen */
+        .setup-container {
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            width: 400px;
+            padding: 30px;
+            margin: 100px auto;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        
+        .setup-container h1 {
+            margin-bottom: 25px;
+            text-align: center;
+            color: #fff;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #e6e6e6;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background-color: #3a3a3a;
+            color: #fff;
+            font-size: 16px;
+        }
+        
+        .btn {
+            background-color: #2d8cff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+        
+        .btn:hover {
+            background-color: #2681eb;
+        }
+        
+        /* Main Meeting Room */
+        .meeting-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        /* Room info bar */
+        .room-info {
+            background-color: #2d2d2d;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        
+        .room-id {
+            font-size: 14px;
+            color: #e6e6e6;
+        }
+        
+        .view-controls {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .view-btn {
+            background-color: transparent;
+            color: #e6e6e6;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .view-btn.active {
+            background-color: #2d8cff;
+            color: white;
+        }
+        
+        /* Video Layouts */
+        .videos-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            padding: 10px;
+            overflow: hidden;
+            background-color: #1a1a1a;
+        }
+        
+        /* Gallery View */
+        .gallery-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-auto-rows: 1fr;
+            gap: 10px;
+            width: 100%;
+            height: 100%;
+            padding: 10px;
+        }
+        
+        /* Speaker View */
+        .speaker-view {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+        }
+        
+        .main-video {
+            flex: 1;
+            position: relative;
+            margin-bottom: 10px;
+        }
+        
+        .thumbnails {
+            height: 150px;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 5px 0;
+        }
+        
+        /* Participant Video */
+        .participant {
+            position: relative;
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+        }
+        
+        .screen-share {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 5;
+            background-color: #000;
+            overflow: hidden;
+        }
+        
+        .participant-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .screen-video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background-color: #000;
+        }
+        
+        .local-participant .participant-video {
+            transform: scaleX(-1); /* Mirror local video */
+        }
+        
+        .participant-name {
+            position: absolute;
+            left: 10px;
+            bottom: 10px;
+            color: white;
+            font-size: 14px;
+            z-index: 2;
+            text-shadow: 0 0 4px rgba(0,0,0,0.8);
+        }
+        
+        .participant-thumbnail {
+            min-width: 150px;
+            height: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Controls */
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 0;
+            background-color: #2d2d2d;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        
+        .control-btn {
+            background-color: #3a3a3a;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin: 0 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 20px;
+            transition: background-color 0.2s;
+        }
+        
+        .control-btn:hover {
+            background-color: #4a4a4a;
+        }
+        
+        .control-btn.danger {
+            background-color: #e74c3c;
+        }
+        
+        .control-btn.danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .control-btn.active {
+            background-color: #e74c3c;
+        }
+        
+        .control-label {
+            display: block;
+            font-size: 12px;
+            margin-top: 5px;
+            color: #e6e6e6;
+            text-align: center;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* Screen Share UI */
+        .is-sharing .screen-share {
+            display: block;
+        }
+        
+        .not-sharing .screen-share {
+            display: none;
+        }
+        
+        /* Hidden Elements */
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Make videos fill their containers */
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* This will cover the entire container, cropping if needed */
+            background-color: #000;
+        }
+        
+        /* Rooms list styles */
+        .rooms-list {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            background-color: white;
+        }
+        
+        .room-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .room-item:hover {
+            background-color: #f0f7ff;
+        }
+        
+        .room-item.selected {
+            background-color: #e3f2fd;
+        }
+        
+        .room-item .room-id {
+            font-weight: bold;
+        }
+        
+        .room-item .room-users {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .no-rooms {
+            padding: 15px;
+            text-align: center;
+            color: #666;
+        }
+        
+        .loading-rooms {
+            padding: 15px;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .secondary-btn {
+            background-color: #757575;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .secondary-btn:hover {
+            background-color: #616161;
+        }
+        
+        .recording-notification {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: #2d2d2d;
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login / Setup Screen -->
+    <div id="setup" class="setup-container">
+        <h1>Join Meeting</h1>
+        <div class="form-group">
+            <label for="username">Your Name:</label>
+            <input type="text" id="username" placeholder="Enter your name">
+        </div>
+        
+        <div class="form-group">
+            <label for="roomId">Room ID:</label>
+            <input type="text" id="roomId" placeholder="Enter room ID or leave empty for new room">
+        </div>
+        
+        <div class="form-group" id="availableRoomsContainer">
+            <label>Available Rooms:</label>
+            <div id="availableRooms" class="rooms-list">
+                <div class="loading-rooms">Loading available rooms...</div>
+            </div>
+            <button id="refreshRoomsBtn" class="secondary-btn">Refresh List</button>
+        </div>
+        
+        <button id="joinBtn" class="btn">Join Meeting</button>
+    </div>
+
+    <!-- Main Meeting Room -->
+    <div id="meetingRoom" class="container hidden">
+        <!-- Room Info Bar -->
+        <div class="room-info">
+            <div class="room-id">
+                <span>Room ID: </span>
+                <span id="currentRoomId"></span>
+            </div>
+            <div class="view-controls">
+                <button id="galleryViewBtn" class="view-btn active">Gallery View</button>
+                <button id="speakerViewBtn" class="view-btn">Speaker View</button>
+            </div>
+        </div>
+
+        <!-- Videos Container -->
+        <div class="videos-container">
+            <!-- Gallery View -->
+            <div id="galleryView" class="gallery-view">
+                <!-- Local Participant -->
+                <div id="localParticipant" class="participant local-participant not-sharing">
+                    <video id="localVideo" class="participant-video" autoplay muted playsinline></video>
+                    <div class="screen-share">
+                        <video id="localScreenShare" class="screen-video" autoplay muted playsinline></video>
+                    </div>
+                    <div class="participant-name">You</div>
+                </div>
+                
+                <!-- Remote participants will be added here dynamically -->
+                <div id="remoteParticipants"></div>
+            </div>
+
+            <!-- Speaker View -->
+            <div id="speakerView" class="speaker-view hidden">
+                <div id="mainVideo" class="main-video">
+                    <!-- The active speaker will be placed here -->
+                </div>
+                <div id="videoThumbnails" class="thumbnails">
+                    <!-- All participants as thumbnails will be here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-group">
+                <button id="muteBtn" class="control-btn">
+                    <i>🎤</i>
+                </button>
+                <span class="control-label">Mute</span>
+            </div>
+            
+            <div class="control-group">
+                <button id="videoBtn" class="control-btn">
+                    <i>📹</i>
+                </button>
+                <span class="control-label">Video</span>
+            </div>
+            
+            <div class="control-group">
+                <button id="shareBtn" class="control-btn">
+                    <i>📤</i>
+                </button>
+                <span class="control-label">Share</span>
+            </div>
+            
+            <div class="control-group">
+                <button id="recordBtn" class="control-btn">
+                    <i>⚫</i>
+                </button>
+                <span class="control-label">Record</span>
+            </div>
+            
+            <div class="control-group">
+                <button id="leaveBtn" class="control-btn danger">
+                    <i>📴</i>
+                </button>
+                <span class="control-label">Leave</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // WebRTC variables
+        let localStream = null;
+        let peerConnections = {};
+        let roomId = null;
+        let websocket = null;
+        let clientId = null;
+        let iceServers = null;
+        
+        // Recording variables
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let isRecording = false;
+        
+        // DOM elements
+        const joinBtn = document.getElementById('joinBtn');
+        const roomIdInput = document.getElementById('roomId');
+        const usernameInput = document.getElementById('username');
+        const setupSection = document.getElementById('setup');
+        const meetingRoom = document.getElementById('meetingRoom');
+        const currentRoomIdSpan = document.getElementById('currentRoomId');
+        const localVideo = document.getElementById('localVideo');
+        const localScreenShare = document.getElementById('localScreenShare');
+        const remoteParticipants = document.getElementById('remoteParticipants');
+        const muteBtn = document.getElementById('muteBtn');
+        const videoBtn = document.getElementById('videoBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const recordBtn = document.getElementById('recordBtn');
+        const leaveBtn = document.getElementById('leaveBtn');
+        const refreshRoomsBtn = document.getElementById('refreshRoomsBtn');
+        
+        // Event listeners
+        joinBtn.addEventListener('click', joinRoom);
+        muteBtn.addEventListener('click', toggleMute);
+        videoBtn.addEventListener('click', toggleVideo);
+        shareBtn.addEventListener('click', toggleScreenShare);
+        recordBtn.addEventListener('click', toggleRecording);
+        leaveBtn.addEventListener('click', leaveRoom);
+        refreshRoomsBtn.addEventListener('click', fetchAvailableRooms);
+        
+        // Fetch ICE servers on load
+        fetchIceServers();
+        
+        // Fetch available rooms on load
+        fetchAvailableRooms();
+        
+        async function fetchIceServers() {
+            try {
+                const response = await fetch('/ice-servers');
+                iceServers = await response.json();
+            } catch (error) {
+                console.error('Failed to fetch ICE servers:', error);
+                iceServers = [{ urls: 'stun:stun.l.google.com:19302' }];
+            }
+        }
+        
+        async function joinRoom() {
+            const username = usernameInput.value.trim();
+            if (!username) {
+                alert('Please enter your name');
+                return;
+            }
+            
+            // Get local media stream
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                    video: true
+                });
+                
+                localVideo.srcObject = localStream;
+                
+                // Create or join a room
+                roomId = roomIdInput.value.trim();
+                
+                if (!roomId) {
+                    // Create a new room
+                    const response = await fetch('/api/create-room', {
+                        method: 'POST'
+                    });
+                    const data = await response.json();
+                    roomId = data.roomId;
+                }
+                
+                currentRoomIdSpan.textContent = roomId;
+                
+                // Connect to WebSocket
+                connectWebSocket();
+                
+                // Show meeting room, hide setup
+                setupSection.style.display = 'none';
+                meetingRoom.classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('Error accessing media devices:', error);
+                alert('Could not access camera or microphone. Please check permissions.');
+            }
+        }
+        
+        function connectWebSocket() {
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
+            
+            websocket = new WebSocket(wsUrl);
+            
+            websocket.onopen = () => {
+                console.log('WebSocket connected');
+                // Announce presence to the room
+                sendSignal({
+                    roomId: roomId,
+                    type: 'join',
+                });
+            };
+            
+            websocket.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                handleSignalMessage(message);
+            };
+            
+            websocket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+            
+            websocket.onclose = () => {
+                console.log('WebSocket connection closed');
+            };
+        }
+        
+        function handleSignalMessage(message) {
+            const { clientId: peerId, type } = message;
+            
+            // Store our client ID if it's new
+            if (!clientId && message.yourId) {
+                clientId = message.yourId;
+            }
+            
+            if (peerId === clientId) return; // Ignore messages from ourselves
+            
+            switch (type) {
+                case 'join':
+                    // A new user joined, create offer
+                    createPeerConnection(peerId);
+                    createAndSendOffer(peerId);
+                    break;
+                    
+                case 'offer':
+                    handleOffer(message);
+                    break;
+                    
+                case 'answer':
+                    handleAnswer(message);
+                    break;
+                    
+                case 'ice-candidate':
+                    handleIceCandidate(message);
+                    break;
+                    
+                case 'leave':
+                    handlePeerLeave(peerId);
+                    break;
+            }
+        }
+        
+        function createPeerConnection(peerId) {
+            if (peerConnections[peerId]) return;
+            
+            const peerConnection = new RTCPeerConnection({ iceServers });
+            
+            peerConnections[peerId] = peerConnection;
+            
+            // Add local tracks to connection
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+            
+            // Handle ICE candidates
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    sendSignal({
+                        roomId: roomId,
+                        type: 'ice-candidate',
+                        targetId: peerId,
+                        candidate: event.candidate
+                    });
+                }
+            };
+            
+            // Handle incoming tracks
+            peerConnection.ontrack = (event) => {
+                const [remoteStream] = event.streams;
+                displayRemoteStream(peerId, remoteStream);
+            };
+            
+            return peerConnection;
+        }
+        
+        async function createAndSendOffer(peerId) {
+            const peerConnection = peerConnections[peerId];
+            
+            try {
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                
+                sendSignal({
+                    roomId: roomId,
+                    type: 'offer',
+                    targetId: peerId,
+                    sdp: peerConnection.localDescription.sdp
+                });
+            } catch (error) {
+                console.error('Error creating offer:', error);
+            }
+        }
+        
+        async function handleOffer(message) {
+            const { clientId: peerId, sdp } = message;
+            
+            const peerConnection = createPeerConnection(peerId);
+            
+            try {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription({
+                    type: 'offer',
+                    sdp
+                }));
+                
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                
+                sendSignal({
+                    roomId: roomId,
+                    type: 'answer',
+                    targetId: peerId,
+                    sdp: peerConnection.localDescription.sdp
+                });
+            } catch (error) {
+                console.error('Error handling offer:', error);
+            }
+        }
+        
+        async function handleAnswer(message) {
+            const { clientId: peerId, sdp } = message;
+            
+            const peerConnection = peerConnections[peerId];
+            if (!peerConnection) return;
+            
+            try {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription({
+                    type: 'answer',
+                    sdp
+                }));
+            } catch (error) {
+                console.error('Error handling answer:', error);
+            }
+        }
+        
+        async function handleIceCandidate(message) {
+            const { clientId: peerId, candidate } = message;
+            
+            const peerConnection = peerConnections[peerId];
+            if (!peerConnection) return;
+            
+            try {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (error) {
+                console.error('Error adding ICE candidate:', error);
+            }
+        }
+        
+        function handlePeerLeave(peerId) {
+            // Remove video element
+            const videoElement = document.getElementById(`remote-${peerId}`);
+            if (videoElement) {
+                videoElement.parentNode.remove();
+            }
+            
+            // Close and remove peer connection
+            if (peerConnections[peerId]) {
+                peerConnections[peerId].close();
+                delete peerConnections[peerId];
+            }
+        }
+        
+        function displayRemoteStream(peerId, stream) {
+            // Check if video element already exists
+            let videoElement = document.getElementById(`remote-${peerId}`);
+            
+            if (!videoElement) {
+                const videoContainer = document.createElement('div');
+                videoContainer.className = 'participant';
+                
+                const videoLabel = document.createElement('h4');
+                videoLabel.textContent = `Remote User ${peerId}`;
+                
+                videoElement = document.createElement('video');
+                videoElement.id = `remote-${peerId}`;
+                videoElement.autoplay = true;
+                videoElement.playsInline = true;
+                
+                videoContainer.appendChild(videoLabel);
+                videoContainer.appendChild(videoElement);
+                remoteParticipants.appendChild(videoContainer);
+            }
+            
+            videoElement.srcObject = stream;
+        }
+        
+        function sendSignal(message) {
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                websocket.send(JSON.stringify(message));
+            }
+        }
+        
+        function toggleMute() {
+            const audioTracks = localStream.getAudioTracks();
+            
+            if (audioTracks.length === 0) return;
+            
+            const isEnabled = audioTracks[0].enabled;
+            audioTracks.forEach(track => {
+                track.enabled = !isEnabled;
+            });
+            
+            muteBtn.textContent = isEnabled ? 'Unmute' : 'Mute';
+        }
+        
+        function toggleVideo() {
+            const videoTracks = localStream.getVideoTracks();
+            
+            if (videoTracks.length === 0) return;
+            
+            const isEnabled = videoTracks[0].enabled;
+            videoTracks.forEach(track => {
+                track.enabled = !isEnabled;
+            });
+            
+            videoBtn.textContent = isEnabled ? 'Enable Video' : 'Disable Video';
+        }
+        
+        async function toggleScreenShare() {
+            try {
+                if (shareBtn.textContent === 'Share Screen') {
+                    // Replace video track with screen sharing
+                    const screenStream = await navigator.mediaDevices.getDisplayMedia({
+                        video: true
+                    });
+                    
+                    const screenTrack = screenStream.getVideoTracks()[0];
+                    
+                    // Replace track in all peer connections
+                    Object.values(peerConnections).forEach(pc => {
+                        const senders = pc.getSenders();
+                        const videoSender = senders.find(sender => 
+                            sender.track && sender.track.kind === 'video'
+                        );
+                        
+                        if (videoSender) {
+                            videoSender.replaceTrack(screenTrack);
+                        }
+                    });
+                    
+                    // Show screen share in local video
+                    const oldStream = localVideo.srcObject;
+                    localVideo.srcObject = screenStream;
+                    
+                    // Listen for end of screen share
+                    screenTrack.onended = () => {
+                        stopScreenShare(oldStream);
+                    };
+                    
+                    shareBtn.textContent = 'Stop Sharing';
+                } else {
+                    // Get back to camera
+                    stopScreenShare();
+                }
+            } catch (error) {
+                console.error('Error during screen sharing:', error);
+            }
+        }
+        
+        async function stopScreenShare(oldStream) {
+            try {
+                // If we don't have the old stream, get a new one
+                if (!oldStream) {
+                    oldStream = await navigator.mediaDevices.getUserMedia({
+                        video: true,
+                        audio: true
+                    });
+                }
+                
+                const videoTrack = oldStream.getVideoTracks()[0];
+                
+                // Replace track in all peer connections
+                Object.values(peerConnections).forEach(pc => {
+                    const senders = pc.getSenders();
+                    const videoSender = senders.find(sender => 
+                        sender.track && sender.track.kind === 'video'
+                    );
+                    
+                    if (videoSender) {
+                        videoSender.replaceTrack(videoTrack);
+                    }
+                });
+                
+                // Update local video
+                localVideo.srcObject = oldStream;
+                
+                shareBtn.textContent = 'Share Screen';
+            } catch (error) {
+                console.error('Error stopping screen share:', error);
+            }
+        }
+        
+        function leaveRoom() {
+            // Stop recording if active
+            if (isRecording) {
+                stopRecording();
+            }
+            
+            // Send leave signal
+            sendSignal({
+                roomId: roomId,
+                type: 'leave'
+            });
+            
+            // Close all peer connections
+            Object.values(peerConnections).forEach(pc => pc.close());
+            peerConnections = {};
+            
+            // Stop all tracks
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+            
+            // Close WebSocket
+            if (websocket) {
+                websocket.close();
+            }
+            
+            // Reset UI
+            meetingRoom.classList.add('hidden');
+            setupSection.style.display = 'block';
+            remoteParticipants.innerHTML = '';
+            roomIdInput.value = '';
+        }
+        
+        function fetchAvailableRooms() {
+            const availableRooms = document.getElementById('availableRooms');
+            availableRooms.innerHTML = '<div class="loading-rooms">Loading available rooms...</div>';
+            
+            fetch('/api/list-rooms')
+                .then(response => response.json())
+                .then(data => {
+                    availableRooms.innerHTML = '';
+                    
+                    if (data.rooms && data.rooms.length > 0) {
+                        data.rooms.forEach(room => {
+                            const roomItem = document.createElement('div');
+                            roomItem.className = 'room-item';
+                            roomItem.dataset.roomId = room.id;
+                            
+                            const roomIdDiv = document.createElement('div');
+                            roomIdDiv.className = 'room-id';
+                            roomIdDiv.textContent = `Room: ${room.id}`;
+                            
+                            const roomUsersDiv = document.createElement('div');
+                            roomUsersDiv.className = 'room-users';
+                            roomUsersDiv.textContent = `${room.userCount} ${room.userCount === 1 ? 'user' : 'users'} online`;
+                            
+                            roomItem.appendChild(roomIdDiv);
+                            roomItem.appendChild(roomUsersDiv);
+                            
+                            roomItem.addEventListener('click', () => {
+                                // Deselect all rooms
+                                document.querySelectorAll('.room-item').forEach(item => {
+                                    item.classList.remove('selected');
+                                });
+                                
+                                // Select this room
+                                roomItem.classList.add('selected');
+                                
+                                // Set the room ID in the input field
+                                document.getElementById('roomId').value = room.id;
+                            });
+                            
+                            availableRooms.appendChild(roomItem);
+                        });
+                    } else {
+                        availableRooms.innerHTML = '<div class="no-rooms">No active rooms available. Create a new room by joining with an empty room ID.</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching rooms:', error);
+                    availableRooms.innerHTML = '<div class="no-rooms">Error loading rooms. Please try again.</div>';
+                });
+        }
+        
+        // Recording functions
+        function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+        
+        function startRecording() {
+            try {
+                // Create a canvas to combine all video streams
+                const canvas = document.createElement('canvas');
+                canvas.width = 1280;
+                canvas.height = 720;
+                const ctx = canvas.getContext('2d');
+                
+                // Create a composite stream from the canvas
+                const compositeStream = canvas.captureStream(30); // Specify 30fps for smoother video
+                
+                // Add audio tracks from local stream
+                const audioTracks = localStream.getAudioTracks();
+                if (audioTracks.length > 0) {
+                    compositeStream.addTrack(audioTracks[0]);
+                }
+                
+                // Set up media recorder
+                mediaRecorder = new MediaRecorder(compositeStream, {
+                    mimeType: 'video/webm;codecs=vp9,opus'
+                });
+                
+                recordedChunks = [];
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = () => {
+                    // Create a blob from the recorded chunks
+                    const blob = new Blob(recordedChunks, {
+                        type: 'video/webm'
+                    });
+                    
+                    // Create a download link
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    document.body.appendChild(a);
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `meeting-recording-${new Date().toISOString()}.webm`;
+                    a.click();
+                    
+                    // Clean up
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                };
+                
+                // Start recording - capture 1 second chunks
+                mediaRecorder.start(1000);
+                
+                // Update UI
+                isRecording = true;
+                recordBtn.innerHTML = '<i style="color: red;">⚫</i>';
+                recordBtn.classList.add('active');
+                
+                // Create a hidden container for cloned videos to use for recording
+                const hiddenContainer = document.createElement('div');
+                hiddenContainer.id = 'hidden-video-container';
+                hiddenContainer.style.position = 'absolute';
+                hiddenContainer.style.left = '-9999px';
+                hiddenContainer.style.top = '-9999px';
+                document.body.appendChild(hiddenContainer);
+                
+                // Clone the local video
+                const localVideoOriginal = document.getElementById('localVideo');
+                const localVideoClone = document.createElement('video');
+                localVideoClone.id = 'localVideo-clone';
+                localVideoClone.autoplay = true;
+                localVideoClone.muted = true;
+                localVideoClone.srcObject = localVideoOriginal.srcObject;
+                hiddenContainer.appendChild(localVideoClone);
+                
+                // Clone all remote videos
+                const remoteVideosOriginal = document.querySelectorAll('.remote-video');
+                const remoteVideoClones = [];
+                
+                remoteVideosOriginal.forEach((video, index) => {
+                    if (video && video.srcObject) {
+                        const clone = document.createElement('video');
+                        clone.id = `remote-video-clone-${index}`;
+                        clone.autoplay = true;
+                        clone.muted = true;
+                        clone.srcObject = video.srcObject;
+                        hiddenContainer.appendChild(clone);
+                        remoteVideoClones.push(clone);
+                    }
+                });
+                
+                // Set up the canvas drawing loop to combine videos
+                const drawVideoFrame = () => {
+                    if (!isRecording) {
+                        // Clean up when recording stops
+                        if (hiddenContainer) {
+                            document.body.removeChild(hiddenContainer);
+                        }
+                        return;
+                    }
+                    
+                    // Clear canvas with black background
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Calculate total number of videos to display
+                    const totalVideos = 1 + remoteVideoClones.length; // Local + remotes
+                    
+                    // Calculate grid layout
+                    const cols = Math.ceil(Math.sqrt(totalVideos));
+                    const rows = Math.ceil(totalVideos / cols);
+                    const width = canvas.width / cols;
+                    const height = canvas.height / rows;
+                    
+                    // Draw local video (always at position 0)
+                    if (localVideoClone && localVideoClone.srcObject) {
+                        const row = 0;
+                        const col = 0;
+                        const x = col * width;
+                        const y = row * height;
+                        
+                        try {
+                            ctx.drawImage(localVideoClone, x, y, width, height);
+                        } catch (e) {
+                            console.error('Error drawing local video:', e);
+                        }
+                    }
+                    
+                    // Draw each remote video clone
+                    remoteVideoClones.forEach((video, index) => {
+                        if (video && video.srcObject) {
+                            // Position index+1 because local video is at position 0
+                            const position = index + 1;
+                            const row = Math.floor(position / cols);
+                            const col = position % cols;
+                            const x = col * width;
+                            const y = row * height;
+                            
+                            try {
+                                ctx.drawImage(video, x, y, width, height);
+                            } catch (e) {
+                                console.error(`Error drawing remote video ${index}:`, e);
+                            }
+                        }
+                    });
+                    
+                    // Request next frame
+                    if (isRecording) {
+                        requestAnimationFrame(drawVideoFrame);
+                    }
+                };
+                
+                // Start the drawing loop
+                drawVideoFrame();
+                
+                // Show recording notification
+                const notification = document.createElement('div');
+                notification.className = 'recording-notification';
+                notification.textContent = 'Recording in progress...';
+                document.body.appendChild(notification);
+                
+                console.log('Recording started');
+            } catch (error) {
+                console.error('Error starting recording:', error);
+                alert('Could not start recording: ' + error.message);
+            }
+        }
+        
+        function stopRecording() {
+            if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+            
+            mediaRecorder.stop();
+            isRecording = false;
+            recordBtn.innerHTML = '<i>⚫</i>';
+            recordBtn.classList.remove('active');
+            
+            // Remove recording notification
+            const notification = document.querySelector('.recording-notification');
+            if (notification) {
+                document.body.removeChild(notification);
+            }
+            
+            // Remove hidden video container if it exists
+            const hiddenContainer = document.getElementById('hidden-video-container');
+            if (hiddenContainer) {
+                document.body.removeChild(hiddenContainer);
+            }
+            
+            console.log('Recording stopped');
+        }
+        
+    </script>
+</body>
+</html>
